@@ -20,6 +20,7 @@
 package prantl.ant.eclipse;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -193,11 +194,17 @@ final class ClassPathGenerator {
     		if (el.getPath() != null && el.getPath().endsWith("*")) {
     			// strip off the star
     			String folderName = el.getPath().substring(0, el.getPath().length() - 1);
-    			Path folder = new Path(task.getProject(), folderName);
-    			for (String entry : folder.list()) {
-    				ClassPathEntryLibraryElement child = new ClassPathEntryLibraryElement();
-    				child.setPath(entry);
-    				expanded.add(child);
+    			Path p = new Path(task.getProject(), folderName);
+    			for (String entry : p.list()) {
+    				String[] children = new File(entry).list();
+    				for (String libpath : children) {
+    					if (libpath.endsWith(".jar")) {
+    						ClassPathEntryLibraryElement child = new ClassPathEntryLibraryElement();
+    	    				child.setPath(new File(folderName, libpath).getPath());
+    	    				expanded.add(child);
+    					}
+    				}
+    				
     			}
     		} else {
     			expanded.add(el);
@@ -229,7 +236,9 @@ final class ClassPathGenerator {
             boolean exported, String source, String javadoc_location, String[] items) {
         String baseDirectory = task.getProject().getBaseDir().getAbsolutePath();
         for (int j = 0; j != items.length; ++j) {
+        
             String item = cutBaseDirectory(items[j], baseDirectory);
+            System.out.println(item);
             ProcessedBinaryClassPathEntry element = getProcessedBinaryClassPathEntry(
                     entries, item);
             if (element == null) {
