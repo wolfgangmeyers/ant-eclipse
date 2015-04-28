@@ -187,8 +187,23 @@ final class ClassPathGenerator {
         processBinaryClassPathEntries(entries, "var", paths);
     }
 
-    private void processLibraryClassPathEntries(Vector entries, Vector paths) {
-        processBinaryClassPathEntries(entries, "lib", paths);
+    private void processLibraryClassPathEntries(Vector entries, Vector<ClassPathEntryBinaryElement> paths) {
+    	Vector<ClassPathEntryBinaryElement> expanded = new Vector<>();
+    	for (ClassPathEntryBinaryElement el : paths) {
+    		if (el.getPath() != null && el.getPath().endsWith("*")) {
+    			// strip off the star
+    			String folderName = el.getPath().substring(0, el.getPath().length() - 1);
+    			Path folder = new Path(task.getProject(), folderName);
+    			for (String entry : folder.list()) {
+    				ClassPathEntryLibraryElement child = new ClassPathEntryLibraryElement();
+    				child.setPath(entry);
+    				expanded.add(child);
+    			}
+    		} else {
+    			expanded.add(el);
+    		}
+    	}
+        processBinaryClassPathEntries(entries, "lib", expanded);
     }
 
     private void processBinaryClassPathEntries(Vector entries, String kind,
